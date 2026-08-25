@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skilify - Learn Anything!</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome Icons -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  >
+
+  <!-- Canvas Confetti for Level Ups & Masteries -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- LZ-String for compact client-side compression of save keys -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
+
+  <!-- Google Identity Services for browser-based sign-in -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <!-- App font + clear Hindi/Devanagari font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800;900&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script src="script.js"></script>
+
+  <link rel="stylesheet" href="styles.css">
+
+  <style>
+    :root { --duo-green:#58cc02; --duo-green-dark:#46a302; --duo-green-shadow:#3c9500; --duo-blue:#1cb0f6; --duo-ink:#3c3c3c; }
+    html { background: #f7f7f7; }
+    body {
+      font-family: "Nunito", sans-serif !important;
+      background:
+        radial-gradient(circle at 8% 4%, #e7ffd3 0, transparent 22rem),
+        radial-gradient(circle at 92% 20%, #dff6ff 0, transparent 24rem),
+        #f7f7f7 !important;
+      color: var(--duo-ink) !important;
+    }
+    :lang(hi), .font-hindi { font-family: "Noto Sans Devanagari", sans-serif !important; }
+    .fun-title { font-family: "Fredoka", "Nunito", sans-serif !important; color: var(--duo-green-dark) !important; letter-spacing: -.04em; }
+    header { background: rgba(255,255,255,.93) !important; border-color: #e5e5e5 !important; }
+    header > div:first-child { height: 5rem !important; }
+    #course-progress-bar { background: linear-gradient(90deg, var(--duo-green), #91e332) !important; }
+    main { overflow-x: hidden; }
+    aside > div {
+      border: 2px solid #e5e5e5 !important;
+      border-radius: 24px !important;
+      background: #fff !important;
+      box-shadow: 0 5px 0 #e5e5e5;
+    }
+    .nav-btn {
+      border: 2px solid transparent !important;
+      border-radius: 16px !important;
+      font-weight: 900 !important;
+      color: #777 !important;
+      transition: transform .15s ease, background .15s ease !important;
+    }
+    .nav-btn:hover { background: #e9ffd8 !important; color: var(--duo-green-dark) !important; transform: translateX(4px); }
+    .nav-btn.active { background: #e9ffd8 !important; color: var(--duo-green-dark) !important; }
+    select, input, textarea { font-family: "Nunito", sans-serif !important; border-radius: 14px !important; }
+    button { font-family: "Nunito", sans-serif !important; font-weight: 900 !important; }
+    .tab-content > div > div.bg-white, #practice-container, #tab-settings .bg-white {
+      border: 2px solid #e5e5e5 !important;
+      border-radius: 24px !important;
+      box-shadow: 0 5px 0 #e5e5e5 !important;
+    }
+    #tab-practice > div > div:first-child { background: linear-gradient(135deg, #e9ffd8, #e8f8ff) !important; border: 2px solid #d8f3be !important; border-radius: 24px !important; box-shadow: 0 5px 0 #d8ead0 !important; }
+    #learning-tree-container::before {
+      content: ""; position: absolute; left: 50%; top: 3rem; bottom: 3rem; width: 10px;
+      transform: translateX(-50%); background: #e5e5e5; border-radius: 999px; z-index: -1;
+    }
+    #lesson-modal > div { border: 3px solid #e5e5e5 !important; border-radius: 28px !important; }
+    #modal-finish-btn, #practice-start-btn {
+      background: var(--duo-green) !important; border-radius: 16px !important;
+      box-shadow: 0 5px 0 var(--duo-green-shadow) !important; transition: transform .1s ease !important;
+    }
+    #modal-finish-btn:active, #practice-start-btn:active { transform: translateY(5px); box-shadow: none !important; }
+    #toast-notification > div { border: 2px solid #d8f3be !important; border-radius: 18px !important; box-shadow: 0 5px 0 #d8ead0 !important; }
+    @media (max-width: 767px) { #learning-tree-container::before { left: 2.5rem; } }
+  </style>
+</head>
+
+ <body class="h-full flex flex-col antialiased selection:bg-lime-300 selection:text-white">
+
+  <!-- Top Navigation Header -->
+  <header class="bg-white border-b border-slate-200 backdrop-blur sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Logo & Title -->
+      <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('dashboard')">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-khan-600 to-emerald-400 flex items-center justify-center text-white shadow-lg shadow-khan-600/30">
+          <i class="fa-solid fa-graduation-cap text-xl"></i>
+        </div>
+        <div>
+          <span class="text-xl font-extrabold tracking-tight fun-title">Skilify</span>
+          <span class="hidden sm:inline-block text-xs font-semibold px-2 py-0.5 ml-2 bg-khan-500/10 text-khan-500 rounded-full border border-khan-500/20">Learn Anything!</span>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs (hidden; moved to sidebar) -->
+      <nav class="hidden">
+        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn active flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all text-khan-500 bg-slate-200/60">
+          <i class="fa-solid fa-book-open-reader"></i>
+          <span>Lessons</span>
+        </button>
+        <button onclick="switchTab('practice')" id="nav-practice" class="nav-btn flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all text-slate-600 hover:text-slate-800 hover:bg-slate-100">
+          <i class="fa-solid fa-dice-d6 text-indigo-500"></i>
+          <span>Practice</span>
+        </button>
+        <!-- Settings quick toggle (keeps full settings page available) -->
+        <button onclick="switchTab('settings')" id="nav-settings" class="ml-3 text-slate-500 hover:text-slate-800 p-2 rounded-md" title="Settings">
+          <i class="fa-solid fa-gear text-sky-400"></i>
+        </button>
+      </nav>
+
+      <!-- (Gamification removed for v0.2 per settings) -->
+      <div id="google-auth-container" class="flex items-center gap-3">
+        <div id="google-user-profile" class="hidden items-center gap-2">
+          <img id="google-user-avatar" class="w-8 h-8 rounded-full" alt="">
+          <span id="google-user-name" class="hidden sm:inline text-sm font-bold text-slate-700"></span>
+          <button type="button" onclick="signOutGoogle()" class="text-xs text-slate-500 hover:text-rose-600 font-bold">Sign out</button>
+        </div>
+        <div id="google-signin-button"></div>
+      </div>
+    </div>
+    
+    <!-- Mobile Navigation Row -->
+    <div class="md:hidden flex items-center justify-around border-t border-slate-200/60 bg-white px-2 py-1 text-xs">
+      <button onclick="switchTab('dashboard')" class="mobile-nav-btn flex flex-col items-center py-1 px-3 text-khan-500">
+        <i class="fa-solid fa-book-open-reader text-base"></i>
+        <span>Lessons</span>
+      </button>
+      <button onclick="switchTab('practice')" class="mobile-nav-btn flex flex-col items-center py-1 px-3 text-slate-600">
+        <i class="fa-solid fa-dice-d6 text-indigo-500 text-base"></i>
+        <span>Practice</span>
+      </button>
+    </div>
+    
+    <!-- Course Header (simplified - course selector moved to sidebar) -->
+    <div class="w-full border-t border-slate-200 bg-white">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="flex-1 w-full md:w-auto">
+          <div class="flex items-center space-x-2 text-xs font-semibold text-khan-500 uppercase tracking-wider mb-1">
+            <i class="fa-solid fa-book-bookmark"></i>
+            <span>Active Learning Course</span>
+          </div>
+          <div>
+            <h3 id="header-course-title" class="text-lg sm:text-2xl font-bold text-slate-900">Loading course...</h3>
+          </div>
+          <p id="course-desc" class="text-slate-600 text-xs sm:text-sm mt-1 line-clamp-2">Loading course summary...</p>
+        </div>
+
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 w-full md:w-72 flex flex-col justify-between shadow-sm">
+          <div class="flex items-center justify-between text-xs font-semibold text-slate-600 mb-2">
+            <span>Overall Progress</span>
+            <span id="course-progress-percent" class="text-khan-500 font-bold">0%</span>
+          </div>
+          <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden mb-2">
+            <div id="course-progress-bar" class="bg-gradient-to-r from-khan-600 to-emerald-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+          <div class="flex justify-between items-center text-xs text-slate-500">
+            <span id="course-completed-count">0 / 0 Lessons</span>
+            <span id="course-mastery-badge" class="bg-amber-100 text-amber-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">In Progress</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Viewport -->
+  <main class="flex-1 overflow-y-auto relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex gap-6">
+      <!-- Sidebar (Lessons / Practice) -->
+      <aside class="w-72 hidden md:block sticky top-16 self-start h-[calc(100vh-6rem)] overflow-auto">
+        <div class="h-full bg-gradient-to-br from-pink-50 via-amber-50 to-emerald-50 p-4 border-r border-slate-100">
+          <div class="flex items-center space-x-3 mb-4">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-pink-500 to-orange-400 flex items-center justify-center text-white shadow-md">
+              <i class="fa-solid fa-graduation-cap"></i>
+            </div>
+            <div>
+              <div class="text-sm font-extrabold fun-title">Skilify</div>
+              <div class="text-xs text-slate-500">Learn Anything</div>
+            </div>
+          </div>
+
+          <nav class="space-y-2">
+            <button id="nav-dashboard" onclick="switchTab('dashboard')" class="nav-btn w-full text-left px-3 py-2 rounded-lg bg-white hover:bg-indigo-50 flex items-center space-x-3"><i class="fa-solid fa-book-open-reader text-indigo-500"></i><span>Lessons</span></button>
+            <button id="nav-practice" onclick="switchTab('practice')" class="nav-btn w-full text-left px-3 py-2 rounded-lg hover:bg-indigo-50 flex items-center space-x-3"><i class="fa-solid fa-dice-d6 text-pink-500"></i><span>Practice</span></button>
+            <button id="nav-settings" onclick="switchTab('settings')" class="nav-btn w-full text-left px-3 py-2 rounded-lg hover:bg-indigo-50 flex items-center space-x-3"><i class="fa-solid fa-gear text-sky-400"></i><span>Settings</span></button>
+          </nav>
+
+          <div class="mt-4">
+            <div class="text-xs text-slate-500 mb-2">Active Course</div>
+            <select id="sidebar-course-select" onchange="changeCourse(this.value)" class="bg-white border border-slate-200 text-slate-900 font-bold text-lg sm:text-xl rounded-xl px-4 py-2 focus:ring-2 focus:ring-khan-500 focus:outline-none w-full cursor-pointer">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+        </div>
+      </aside>
+
+      <div class="flex-1">
+
+        <!-- TAB 1: DASHBOARD & COURSE LEARNING TREE -->
+        <section id="tab-dashboard" class="tab-content min-h-full pb-16">
+      
+      <!-- (Course header moved into main header for unified top bar) -->
+
+      <!-- Course Learning Path / Tree View -->
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 py-10">
+        <div id="learning-tree-container" class="space-y-12 relative">
+          <!-- Dynamic Unit and Lesson Nodes Rendered Here -->
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: PRACTICE (Endless Quiz) -->
+    <section id="tab-practice" class="tab-content hidden min-h-full p-6 sm:p-8 lg:p-10">
+      <div class="max-w-4xl mx-auto space-y-6">
+        <div class="bg-gradient-to-r from-indigo-50 to-emerald-50 border border-indigo-100 rounded-2xl p-6 sm:p-8 shadow-lg">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-xl font-bold fun-title">Practice</h2>
+              <p class="text-slate-700 text-sm">Endless randomized questions — choose the scope and go!</p>
+            </div>
+            <div class="flex items-center space-x-3">
+              <label class="text-xs text-slate-600">Scope</label>
+              <select id="practice-scope-select" class="bg-white border border-slate-200 rounded px-3 py-2 text-sm">
+                <option value="current">Current Unit</option>
+                <option value="course">Entire Course</option>
+              </select>
+              <select id="practice-unit-select" class="bg-white border border-slate-200 rounded px-3 py-2 text-sm"></select>
+              <button id="practice-start-btn" onclick="startPractice()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold">Start</button>
+              <button id="practice-stop-btn" onclick="stopPractice()" class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg font-semibold hidden">Stop</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="practice-container" class="min-h-[220px] bg-white border border-slate-200 rounded-2xl p-6 shadow">
+          <div class="text-slate-600">Pick a scope and press <strong>Start</strong> to begin practicing randomized questions.</div>
+        </div>
+      </div>
+    </section>
+
+
+      </section>
+
+      <!-- TAB 2: SETTINGS (Import/Export + Prompt Helper + Theme) -->
+      <section id="tab-settings" class="tab-content hidden min-h-full p-4 sm:p-6 lg:p-8">
+      <div class="max-w-4xl mx-auto space-y-6">
+
+        <!-- Settings Header -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-xl font-bold fun-title">Settings</h2>
+              <p class="text-slate-600 text-sm">Import / Export courses, edit prompt templates, and change app preferences.</p>
+            </div>
+            <div>
+           
+             
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow">
+          <h3 class="text-lg font-bold text-slate-900 mb-3">Appearance</h3>
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-slate-700">Theme</p>
+              <p class="text-xs text-slate-500">Choose light or dark mode for the UI.</p>
+            </div>
+            <div class="flex items-center space-x-3">
+              <button id="theme-toggle-btn" onclick="toggleTheme()" class="px-4 py-2 bg-slate-100 border border-slate-200 rounded">Toggle Theme</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Course Library: Edit / Delete (Settings) -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow">
+          <h3 class="text-lg font-bold text-slate-900 mb-3">Course Library</h3>
+          <p class="text-slate-600 text-xs mb-4">Manage imported courses. Use Edit to load a course into the Import area for modifications.</p>
+          <div id="course-library-list" class="space-y-3">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Import / Export -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center space-x-3">
+              <div class="w-10 h-10 rounded-xl bg-sky-100 text-sky-600 border border-sky-100 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-file-arrow-up"></i>
+              </div>
+              <div>
+                <h2 class="text-lg font-bold text-slate-900">Import / Export Courses</h2>
+                <p class="text-slate-600 text-xs">Paste a course JSON or upload a file to add it to your library. Export active course as JSON.</p>
+              </div>
+            </div>
+            <button onclick="loadSamplePromptSchema()" class="text-xs bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg font-medium transition">Insert Sample JSON</button>
+          </div>
+
+          <textarea id="import-json-textarea" rows="10" placeholder='Paste your course JSON format here...' class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 font-mono text-xs text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-sky-200"></textarea>
+
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
+            <label class="w-full sm:w-auto text-xs bg-slate-50 hover:bg-slate-100 text-slate-700 px-4 py-2.5 rounded-xl font-semibold cursor-pointer text-center transition">
+              <i class="fa-solid fa-upload mr-2"></i> Upload .json or .txt File
+              <input type="file" accept=".json,.txt" onchange="handleFileUpload(event)" class="hidden">
+            </label>
+
+            <button onclick="importCourseFromTextarea()" class="w-full sm:w-auto px-6 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl shadow transition">
+              <i class="fa-solid fa-check mr-2"></i> Import Course
+            </button>
+            <div class="ml-auto flex items-center gap-3">
+              <button onclick="exportCurrentCourse()" class="text-xs bg-slate-50 hover:bg-slate-100 text-slate-700 px-4 py-2 rounded-lg font-semibold transition"><i class="fa-solid fa-download mr-1.5"></i> Export Active Course</button>
+              <button onclick="resetAllDataConfirm()" class="text-xs bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-100 px-4 py-2 rounded-lg font-semibold transition"><i class="fa-solid fa-trash mr-1.5"></i> Reset Defaults</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Prompt Helper -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow">
+          <div class="flex items-center space-x-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 border border-sky-100 flex items-center justify-center text-lg">
+              <i class="fa-solid fa-terminal"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">Prompt Helper</h2>
+              <p class="text-slate-600 text-xs">Fill in the fields and copy the master prompt to use in any LLM.</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Skill / Topic</label>
+              <input id="prompt-skill-input" type="text" placeholder="e.g. Organic Chemistry" class="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-sm" oninput="updateMasterPromptPreview()">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Depth / Units</label>
+              <select id="prompt-depth-select" class="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-sm" onchange="updateMasterPromptPreview()">
+                <option>Beginner Fundamentals (3 Units)</option>
+                <option selected>Comprehensive Mastery (4 Units)</option>
+                <option>Advanced / Deep Dive (5 Units)</option>
+                <option>VERY Advanced (10 units, AI Pro Mode Recommended)</option>
+                <option>You literally want to become one with the subject (20 UNITS!!!! 7 LESSONS PER UNIT!!!! AT LEAST 10 QUESTIONS PER LESSON!!!)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Notes (optional)</label>
+            <textarea id="prompt-notes-input" rows="3" placeholder="Add any author notes or constraints for the curriculum generator" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm" oninput="updateMasterPromptPreview()"></textarea>
+          </div>
+
+          <div class="relative mb-4">
+            <pre id="master-prompt-code" class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs font-mono text-slate-800 overflow-x-auto whitespace-pre-wrap"></pre>
+            <button onclick="copyMasterPrompt()" class="absolute top-3 right-3 bg-sky-600 hover:bg-sky-500 text-white text-xs px-3 py-1.5 rounded-lg font-semibold shadow transition flex items-center space-x-1">
+              <i class="fa-solid fa-copy"></i>
+              <span id="copy-prompt-btn-text">Copy Prompt</span>
+            </button>
+          </div>
+
+          <div class="text-xs text-slate-500">How to use: customize the topic & depth, copy the prompt, paste into your preferred LLM, then import the JSON result into the Import area above.</div>
+        </div>
+
+        <!-- Save Key: export/import progress -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="text-lg font-bold text-slate-900">Save Key</h3>
+              <p class="text-slate-600 text-xs">Generate a compact save key to transfer your courses & progress between devices.</p>
+            </div>
+          </div>
+
+          <div class="mb-3">
+              <button onclick="generateSaveKey()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold mr-3">Generate Save Key</button>
+            <button onclick="copySaveKey()" id="copy-savekey-btn" class="px-3 py-2 bg-slate-50 hover:bg-slate-100 rounded-lg">Copy</button>
+          </div>
+
+            <div class="mb-3 text-xs text-slate-600">
+              <label class="inline-flex items-center mr-4"><input type="radio" name="savekey-scope" value="active" checked class="mr-2">Export Active Course (recommended)</label>
+              <label class="inline-flex items-center"><input type="radio" name="savekey-scope" value="all" class="mr-2">Export Entire Library</label>
+            </div>
+
+          <textarea id="save-key-output" rows="4" readonly class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-mono text-xs text-slate-800 placeholder-slate-400"></textarea>
+
+          <div class="mt-4">
+            <label class="block text-xs font-semibold text-slate-700 mb-2">Paste Save Key To Restore</label>
+            <textarea id="save-key-input" rows="3" placeholder="Paste compressed save key here" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-mono text-xs text-slate-800 placeholder-slate-400"></textarea>
+            <div class="mt-3">
+              <button onclick="applySaveKeyFromInput()" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg font-semibold">Apply Save Key</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+        </section>
+
+      </div>
+    </div>
+
+    <!-- Old Import/Prompt tabs removed (consolidated into Settings) -->
+
+  </main>
+
+
+  <!-- Full-page lesson workspace -->
+  <div id="lesson-modal" class="lesson-workspace fixed inset-0 z-50 hidden flex flex-col text-slate-900">
+    <header class="lesson-topbar shrink-0 border-b border-slate-200 bg-white">
+      <div class="lesson-heading px-4 sm:px-8 py-4 flex items-center justify-between gap-4">
+        <div class="min-w-0">
+          <div id="modal-unit-title" class="text-xs font-semibold text-khan-500 uppercase tracking-wider truncate">Unit 1: Lesson 1</div>
+          <h3 id="modal-lesson-title" class="text-xl sm:text-2xl font-bold text-slate-900 truncate">Understanding Qubits</h3>
+        </div>
+        <button onclick="closeLessonModal()" aria-label="Exit lesson" title="Exit lesson" class="lesson-exit w-10 h-10 shrink-0 rounded-xl bg-slate-100 hover:bg-slate-50 text-slate-700 flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <nav class="lesson-structure px-4 sm:px-8 pb-3" aria-label="Lesson sections">
+        <div class="lesson-step active" data-lesson-section="overview">
+          <i class="fa-solid fa-book-open"></i><span>Overview</span>
+        </div>
+        <div class="lesson-step" data-lesson-section="video">
+          <i class="fa-brands fa-youtube"></i><span>Watch</span>
+        </div>
+        <div class="lesson-step" data-lesson-section="practice">
+          <i class="fa-solid fa-pen-to-square"></i><span>Practice</span>
+        </div>
+        <div class="lesson-step" data-lesson-section="complete">
+          <i class="fa-solid fa-circle-check"></i><span>Finish</span>
+        </div>
+      </nav>
+    </header>
+
+    <main class="lesson-main flex-1 min-h-0 overflow-y-auto">
+      <section id="lesson-section-overview" class="lesson-section lesson-section-overview active">
+        <div class="lesson-content-narrow">
+          <p class="lesson-kicker"><i class="fa-solid fa-lightbulb"></i> Lesson overview</p>
+          <h4 class="lesson-section-title">Build your understanding</h4>
+          <div id="modal-lesson-summary" class="lesson-summary"></div>
+          <div class="lesson-flow-actions"><button onclick="setLessonSection('video')" class="lesson-next-button">Continue to video <i class="fa-solid fa-arrow-right"></i></button></div>
+        </div>
+      </section>
+
+      <section id="lesson-section-video" class="lesson-section lesson-section-video">
+        <div class="lesson-video-heading flex items-center justify-between gap-4">
+          <div>
+            <p class="lesson-kicker"><i class="fa-brands fa-youtube"></i> Recommended video</p>
+            <h4 id="modal-video-channel" class="lesson-section-title">Educational Video</h4>
+          </div>
+          <a id="modal-youtube-link" href="#" target="_blank" rel="noopener" class="lesson-link shrink-0">Open on YouTube <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+        </div>
+        <div class="lesson-video-frame">
+          <iframe id="modal-youtube-iframe" class="w-full h-full" src="" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          <div id="modal-video-fallback" class="video-fallback hidden">
+            <i class="fa-brands fa-youtube"></i>
+            <p id="modal-video-fallback-title">Video preview unavailable</p>
+            <a id="modal-video-fallback-link" href="#" target="_blank" rel="noopener">Watch on YouTube <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+          </div>
+        </div>
+        <p class="lesson-video-query">Search query: <code id="modal-video-query">...</code></p>
+        <div class="lesson-flow-actions"><button onclick="setLessonSection('practice')" class="lesson-next-button">Continue to practice <i class="fa-solid fa-arrow-right"></i></button></div>
+      </section>
+
+      <section id="lesson-section-practice" class="lesson-section lesson-section-practice">
+        <div class="lesson-content-wide">
+          <p class="lesson-kicker"><i class="fa-solid fa-pen-to-square"></i> Practice exercise</p>
+          <h4 class="lesson-section-title">Check what you know</h4>
+          <div id="quiz-container" class="space-y-6"></div>
+        </div>
+      </section>
+
+      <section id="lesson-section-complete" class="lesson-section lesson-section-complete">
+        <div class="lesson-complete-card">
+          <i class="fa-solid fa-flag-checkered"></i>
+          <h4 class="lesson-section-title">Ready to finish?</h4>
+          <p id="modal-completion-status" class="text-sm text-slate-600 flex items-center justify-center gap-2">Complete the exercise to mark this lesson complete.</p>
+          <button id="modal-finish-btn" onclick="markLessonComplete()" class="px-6 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl shadow transition inline-flex items-center gap-2">
+            <i class="fa-solid fa-check"></i><span>Mark Complete</span>
+          </button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+
+  <!-- Custom Alert Toast Notification -->
+  <div id="toast-notification" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="bg-white border border-khan-500/20 text-slate-900 px-4 py-3 rounded-xl shadow flex items-center space-x-3">
+      <div id="toast-icon" class="text-khan-500 text-lg">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <span id="toast-message" class="text-sm font-semibold">Action completed successfully.</span>
+    </div>
+  </div>
+
+
+  
+</body>
+</html>
+
